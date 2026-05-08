@@ -1,0 +1,39 @@
+# =============================================================================
+#  Ingress — exposes the User API to the outside of the cluster.
+#
+#  This uses defaultBackend, which routes every incoming request (any host,
+#  any path) to our Service. That is the simplest possible setup, matching
+#  the course material's first ingress example.
+#
+#  In production you would normally use spec.rules with hostnames and paths
+#  so a single Ingress can route multiple services — see comment block below.
+# =============================================================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-api-ingress
+  labels:
+    app: my-user-api
+spec:
+  defaultBackend:
+    service:
+      name: my-api-service      # must match the Service's metadata.name
+      port:
+        number: 8000             # must match the Service's spec.ports[].port
+
+# -----------------------------------------------------------------------------
+#  Production-style alternative with host + path rules:
+#
+#  spec:
+#    rules:
+#      - host: api.example.com
+#        http:
+#          paths:
+#            - path: /
+#              pathType: Prefix
+#              backend:
+#                service:
+#                  name: my-api-service
+#                  port:
+#                    number: 8000
+# -----------------------------------------------------------------------------

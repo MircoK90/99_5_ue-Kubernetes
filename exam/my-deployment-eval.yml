@@ -1,0 +1,62 @@
+# =============================================================================
+#  Deployment for the User API.
+#
+#  Each Pod runs TWO containers side-by-side (multi-container / sidecar pattern):
+#    1. mysql  — datascientest/mysql-k8s:1.0.0  (database)
+#    2. api    — the FastAPI service we built from the provided Dockerfile
+#
+#  Why one Pod with both? Containers in the same Pod share localhost, so the
+#  API can reach MySQL on 127.0.0.1:3306 without any Service in between.
+#  3 replicas means 3 independent (api+mysql) pairs.
+#
+#  Note: in real production you would NOT bundle a database with a stateless
+#  API like this — DBs belong in their own StatefulSet with persistent storage.
+#  This layout is what the exercise asks for.
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-api-deployment
+  labels:
+    app: my-user-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-user-api          # MUST match template.metadata.labels below
+  template:
+    metadata:
+      labels:
+        app: my-user-api        # picked up by the selector above + by the Service
+    spec:
+      containers:
+
+        # --- MySQL container ----------------------------------------------
+        - name: mysql
+          image: datascientest/mysql-k8s:1.0.0
+          ports:
+            - containerPort: 3306
+          env:
+            # The official MySQL image initialises the root password from
+            # this env var on first start. Sourced from our Secret.
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_ROOT_PASSWORD
+
+        # --- FastAPI container --------------------------------------------
+        - name: api
+          # Replace with the image you push to your own Docker Hub account.
+          image: mircok90/user-api:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            # Same secret — the API reads this env var in main.py to build
+            # the SQLAlchemy connection URL.
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_ROOT_PASSWORD

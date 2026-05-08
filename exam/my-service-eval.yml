@@ -1,0 +1,24 @@
+# =============================================================================
+#  Service for the User API.
+#
+#  Type: ClusterIP — only reachable from inside the cluster. The Ingress
+#  (my-ingress-eval.yml) is what makes the API accessible from outside.
+#
+#  The Service uses the label "app: my-user-api" to find the Pods created
+#  by the Deployment, then load-balances incoming traffic across them.
+# =============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-api-service
+  labels:
+    app: my-user-api
+spec:
+  type: ClusterIP
+  selector:
+    app: my-user-api            # matches the Pod label set in the Deployment
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8000                # port the Service listens on (cluster-internal)
+      targetPort: 8000          # port on the Pod (the FastAPI container)
