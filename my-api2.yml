@@ -1,0 +1,25 @@
+# kubectl create configmap my-config-map --from-literal ENVIRONMENT_TYPE=production
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-sentiment-analysis-deployment
+  labels:
+    app: my-sentiment-analysis-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-sentiment-analysis-api
+  template:
+    metadata:
+      labels:
+        app: my-sentiment-analysis-api
+    spec:
+      containers:
+        - name: my-sentiment-analysis-container
+          image: datascientest/fake-api:1.0.0
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: my-config-map
